@@ -223,7 +223,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👤 Author
 
-**Your Name**
+**Aravind S*
 - GitHub: (https://github.com/Arv-ind-s)
 - LinkedIn: [(https://www.linkedin.com/in/97aravind-s/)
 - Email: arvindsathyan@gmail.com
