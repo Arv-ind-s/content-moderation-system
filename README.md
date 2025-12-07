@@ -194,10 +194,9 @@ Instructions for deploying to AWS Lambda will be added after local development i
 - [x] Project initialization and repository setup
 - [x] Folder structure and version control
 - [x] Exploratory Data Analysis (EDA)
+- [x]  Data preprocessing pipeline
 
 ### 🚧 In Progress
-- [ ] Data preprocessing pipeline
-- [ ] Data preprocessing pipeline
 - [ ] Model selection and fine-tuning
 - [ ] FastAPI development
 - [ ] AWS Lambda deployment
