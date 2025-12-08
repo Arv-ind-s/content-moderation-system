@@ -205,3 +205,19 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Add these lines if not already present
+.env
+*.pt
+*.pth
+*.bin
+models/
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+.env
+models/
+*.pt
+*.pth
+venv/
