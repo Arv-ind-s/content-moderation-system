@@ -81,4 +81,5 @@ With AWS Free Tier:
 
 ## Status
 
-✅ Terraform templates created and tested
+✅ Terraform directory and structure created
+
