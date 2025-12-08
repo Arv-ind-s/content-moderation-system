@@ -195,10 +195,11 @@ Instructions for deploying to AWS Lambda will be added after local development i
 - [x] Folder structure and version control
 - [x] Exploratory Data Analysis (EDA)
 - [x]  Data preprocessing pipeline
+- [x]  Model selection and fine-tuning
 
 ### 🚧 In Progress
-- [ ] Model selection and fine-tuning
 - [ ] FastAPI development
+- [ ] Terraform template creation
 - [ ] AWS Lambda deployment
 - [ ] DynamoDB integration
 - [ ] Testing and evaluation
