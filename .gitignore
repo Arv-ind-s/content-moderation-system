@@ -211,7 +211,10 @@ __marimo__/
 *.pt
 *.pth
 *.bin
-models/
+/models/
+*.pt
+*.pth
+*.bin
 __pycache__/
 .pytest_cache/
 .venv/
