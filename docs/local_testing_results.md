@@ -12,14 +12,13 @@
 ✅ API responds on http://localhost:8000
 
 ### 2. Clean Comment Test
-**Input:** "This is a helpful article. Thank you!"
+**Input:** "This is a really helpful and informative article. Thank you for sharing!"
 **Result:** 
 - is_toxic: false
-- Max score: 0.05 (non-toxic)
 - Flagged categories: []
 
 ### 3. Toxic Comment Test
-**Input:** "You are so stupid and worthless!"
+**Input:** "You are so stupid and worthless! Nobody likes you. Go away!"
 **Result:**
 - is_toxic: true
 - Toxic score: 0.99
@@ -29,7 +28,6 @@
 
 ### 4. Performance
 - Average response time: ~300-500ms (on CPU)
-- Model loads in: ~5 seconds
 
 ## Screenshots
 - [Swagger UI](screenshots/swagger-ui.png)
