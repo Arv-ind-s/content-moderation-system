@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 import logging
 from datetime import datetime
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 from src.api.schemas import ModerationRequest, ModerationResponse, HealthResponse, ToxicityScores
@@ -15,8 +16,12 @@ from src.models.model_loader import ModelLoader
 from src.models.predictor import ToxicityPredictor
 from src.utils.text_processing import clean_text, validate_text
 
-# Load environment variables
-load_dotenv()
+# Get the project root directory (where .env is located)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+# Load environment variables from project root
+env_path = PROJECT_ROOT / '.env'
+load_dotenv(dotenv_path=env_path)
 
 # Configure logging
 logging.basicConfig(
@@ -24,6 +29,12 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Log environment variables (for debugging)
+logger.info(f"PROJECT_ROOT: {PROJECT_ROOT}")
+logger.info(f"Loading .env from: {env_path}")
+logger.info(f"MODEL_NAME from env: {os.getenv('MODEL_NAME')}")
+logger.info(f"MODEL_PATH from env: {os.getenv('MODEL_PATH')}")
 
 # Global variables for model
 model_loader = None
@@ -41,13 +52,23 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up: Loading model...")
     
     model_name = os.getenv("MODEL_NAME", "distilbert-base-uncased")
-    model_path = os.getenv("MODEL_PATH", "models/best_model.pt")
+    model_path_relative = os.getenv("MODEL_PATH", "models/best_model.pt")
     max_length = int(os.getenv("MAX_LENGTH", "256"))
+    
+    # Resolve absolute path for model
+    model_path_absolute = PROJECT_ROOT / model_path_relative
+    
+    logger.info(f"Model configuration:")
+    logger.info(f"  - Model name: {model_name}")
+    logger.info(f"  - Model path (relative): {model_path_relative}")
+    logger.info(f"  - Model path (absolute): {model_path_absolute}")
+    logger.info(f"  - Model file exists: {model_path_absolute.exists()}")
+    logger.info(f"  - Max length: {max_length}")
     
     try:
         model_loader = ModelLoader(
             model_name=model_name,
-            model_path=model_path
+            model_path=str(model_path_absolute)
         )
         model_loader.load_model()
         
@@ -58,10 +79,12 @@ async def lifespan(app: FastAPI):
             device=model_loader.device
         )
         
-        logger.info("Model loaded successfully!")
+        logger.info("✅ Model loaded successfully!")
+        logger.info(f"✅ Using device: {model_loader.device}")
+        logger.info(f"✅ Fine-tuned model loaded: {model_loader.fine_tuned_loaded}")
         
     except Exception as e:
-        logger.error(f"Failed to load model: {str(e)}")
+        logger.error(f"❌ Failed to load model: {str(e)}")
         raise
     
     yield
@@ -101,9 +124,12 @@ async def root():
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
     """Health check endpoint."""
+    is_loaded = model_loader is not None and model_loader.is_loaded()
+    fine_tuned = model_loader.fine_tuned_loaded if model_loader else False
+    
     return HealthResponse(
         status="healthy",
-        model_loaded=model_loader is not None and model_loader.is_loaded(),
+        model_loaded=is_loaded,
         version="1.0.0"
     )
 
@@ -148,7 +174,7 @@ async def moderate_content(request: ModerationRequest):
             timestamp=datetime.utcnow()
         )
         
-        logger.info(f"Moderation request processed: is_toxic={prediction['is_toxic']}")
+        logger.info(f"Moderation request processed: is_toxic={prediction['is_toxic']}, confidence={prediction['confidence']:.3f}")
         
         return response
         
