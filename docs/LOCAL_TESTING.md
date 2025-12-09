@@ -22,9 +22,10 @@
 **Input:** "You are so stupid and worthless!"
 **Result:**
 - is_toxic: true
-- Toxic score: 0.92
-- Insult score: 0.87
-- Flagged categories: ["toxic", "insult"]
+- Toxic score: 0.99
+- Insult score: 0.99
+- obscene score: 0.92
+- Flagged categories: ["toxic", "insult","obscene"]
 
 ### 4. Performance
 - Average response time: ~300-500ms (on CPU)
