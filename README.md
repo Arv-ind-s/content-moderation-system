@@ -196,10 +196,10 @@ Instructions for deploying to AWS Lambda will be added after local development i
 - [x] Exploratory Data Analysis (EDA)
 - [x] Data preprocessing pipeline
 - [x] Model selection and fine-tuning
-- [x] Terraform template creation  
+- [x] Terraform template creation
+- [x] FastAPI development 
 
 ### 🚧 In Progress
-- [ ] FastAPI development
 - [ ] AWS Lambda deployment
 - [ ] DynamoDB integration
 - [ ] Testing and evaluation
