@@ -1,6 +1,5 @@
-# Placeholder - actual Lambda function will be added after FastAPI development
 resource "aws_lambda_function" "moderation_api" {
-  filename      = "lambda_function.zip"  # Will be created in Step 6
+  filename      = "lambda_function.zip"
   function_name = "${var.project_name}-api-${var.environment}"
   role          = aws_iam_role.lambda_role.arn
   handler       = "main.handler"
@@ -16,8 +15,25 @@ resource "aws_lambda_function" "moderation_api" {
     }
   }
   
-  # Skip for now - will add actual deployment package later
+  # Prevent Lambda from creating its own log group (we control retention)
+  depends_on = [aws_cloudwatch_log_group.lambda_logs]
+  
   lifecycle {
     ignore_changes = [filename, source_code_hash]
+  }
+  
+  tags = {
+    CostCenter = "Free Tier"
+  }
+}
+
+# CloudWatch Log Group with retention limit (FREE TIER PROTECTION)
+resource "aws_cloudwatch_log_group" "lambda_logs" {
+  name              = "/aws/lambda/${var.project_name}-api-${var.environment}"
+  retention_in_days = 7  # Delete logs after 7 days (Free Tier = 5GB)
+  
+  tags = {
+    Name       = "Lambda Logs"
+    CostCenter = "Free Tier"
   }
 }
