@@ -15,7 +15,6 @@ resource "aws_lambda_function" "moderation_api" {
     }
   }
   
-  # Prevent Lambda from creating its own log group (we control retention)
   depends_on = [aws_cloudwatch_log_group.lambda_logs]
   
   lifecycle {
@@ -27,10 +26,9 @@ resource "aws_lambda_function" "moderation_api" {
   }
 }
 
-# CloudWatch Log Group with retention limit (FREE TIER PROTECTION)
 resource "aws_cloudwatch_log_group" "lambda_logs" {
   name              = "/aws/lambda/${var.project_name}-api-${var.environment}"
-  retention_in_days = 7  # Delete logs after 7 days (Free Tier = 5GB)
+  retention_in_days = 7
   
   tags = {
     Name       = "Lambda Logs"
