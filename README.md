@@ -168,7 +168,8 @@ Detailed instructions for deploying the infrastructure to AWS using Docker and T
 ```json
 {
   "text": "Your comment text here",
-  "predictions": {
+  "is_toxic": true,
+  "toxicity_scores": {
     "toxic": 0.92,
     "severe_toxic": 0.15,
     "obscene": 0.78,
@@ -176,7 +177,12 @@ Detailed instructions for deploying the infrastructure to AWS using Docker and T
     "insult": 0.65,
     "identity_hate": 0.12
   },
-  "is_toxic": true,
+  "flagged_categories": [
+    "toxic",
+    "obscene",
+    "insult"
+  ],
+  "confidence": 0.92,
   "timestamp": "2025-12-06T10:30:00Z"
 }
 ```
