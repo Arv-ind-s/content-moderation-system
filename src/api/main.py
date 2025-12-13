@@ -1,15 +1,20 @@
+```python
 """
 FastAPI application for content moderation.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from datetime import datetime
+import json
+import time
+import uuid
 import os
+from pythonjsonlogger import jsonlogger
 from pathlib import Path
 from dotenv import load_dotenv
+from mangum import Mangum
 
 from src.api.schemas import ModerationRequest, ModerationResponse, HealthResponse, ToxicityScores
 from src.models.model_loader import ModelLoader
@@ -23,12 +28,31 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 env_path = PROJECT_ROOT / '.env'
 load_dotenv(dotenv_path=env_path)
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# Configure caching for Lambda (read-only filesystem)
+# We must set these BEFORE importing transformers (which happens in model_loader)
+# However, model_loader is imported at top level, so we might be too late if we don't set env vars in Dockerfile
+# But setting them here helps if running locally or if imports are delayed.
+# Ideally, these should be set in the Dockerfile or Lambda env vars.
+# We'll set them here just in case, but relying on Lambda env vars is better.
+if os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+    os.environ['TRANSFORMERS_CACHE'] = '/tmp/transformers_cache'
+    os.environ['HF_HOME'] = '/tmp/hf_home'
+    os.environ['NLTK_DATA'] = '/tmp/nltk_data'
+
+
+# Configure Structured JSON Logging
+logger = logging.getLogger()
+logHandler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter(
+    fmt='%(asctime)s %(levelname)s %(name)s %(message)s'
 )
-logger = logging.getLogger(__name__)
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+logger.setLevel(logging.INFO)
+
+# Remove default handlers to avoid duplicate logs
+for handler in logger.handlers[:-1]:
+    logger.removeHandler(handler)
 
 # Log environment variables (for debugging)
 logger.info(f"PROJECT_ROOT: {PROJECT_ROOT}")
@@ -93,13 +117,61 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down...")
 
 
+# Configure Structured JSON Logging
+logger = logging.getLogger()
+logHandler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter(
+    fmt='%(asctime)s %(levelname)s %(name)s %(message)s'
+)
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+logger.setLevel(logging.INFO)
+
+# Remove default handlers to avoid duplicate logs
+for handler in logger.handlers[:-1]:
+    logger.removeHandler(handler)
+
+# Log environment variables (for debugging)
+logger.info(f"PROJECT_ROOT: {PROJECT_ROOT}")
+logger.info(f"Loading .env from: {env_path}")
+logger.info(f"MODEL_NAME from env: {os.getenv('MODEL_NAME')}")
+logger.info(f"MODEL_PATH from env: {os.getenv('MODEL_PATH')}")
+
+
 # Create FastAPI app
 app = FastAPI(
     title="Content Moderation API",
-    description="Real-time toxicity detection using DistilBERT",
+    description="Real-time content moderation using DistilBERT",
     version="1.0.0",
     lifespan=lifespan
 )
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    start_time = time.time()
+    
+    # Add request context to logs
+    logger = logging.getLogger("api")
+    extra = {"request_id": request_id, "path": request.url.path, "method": request.method}
+    
+    logger.info("Request started", extra=extra)
+    
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        extra["status_code"] = response.status_code
+        extra["process_time"] = round(process_time, 4)
+        
+        logger.info("Request completed", extra=extra)
+        
+        response.headers["X-Request-ID"] = request_id
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+    except Exception as e:
+        logger.error(f"Request failed: {str(e)}", extra=extra)
+        raise
 
 # Add CORS middleware
 app.add_middleware(
@@ -109,6 +181,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Create handler for AWS Lambda
+handler = Mangum(app)
 
 
 @app.get("/", tags=["Root"])

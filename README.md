@@ -41,43 +41,35 @@ Online platforms face a critical challenge: **millions of user-generated comment
 
 ```
 ┌─────────────┐
-│   User      │
-│  Request    │
+│   Client    │
+│  (HTTP/1.1) │
 └──────┬──────┘
        │
        ▼
 ┌─────────────────┐
-│   FastAPI       │
-│  (API Gateway)  │
+│  API Gateway    │
+│   (HTTP API)    │
 └──────┬──────────┘
        │
        ▼
-┌─────────────────┐         ┌──────────────┐
-│  AWS Lambda     │────────▶│  Amazon S3   │
-│  (Inference)    │         │ (Model Store)│
-└──────┬──────────┘         └──────────────┘
+┌─────────────────┐      ┌──────────────┐
+│  AWS Lambda     │◀─────│     ECR      │
+│ (Docker Image)  │      │(Image Repo)  │
+└──────┬──────────┘      └──────────────┘
        │
        │ Load Model
        ▼
-┌─────────────────┐
-│  Transformers   │
-│   (DistilBERT)  │
-└──────┬──────────┘
-       │
-       │ Predict
-       ▼
-┌─────────────────┐
-│   DynamoDB      │
-│  (Logging &     │
-│   Results)      │
-└─────────────────┘
+┌─────────────────┐      ┌──────────────┐
+│   Amazon S3     │      │   DynamoDB   │
+│ (Model Storage) │      │ (Predictions)│
+└─────────────────┘      └──────────────┘
 ```
 
 **Flow:**
-1. User sends text via API request
-2. FastAPI receives and validates input
-3. AWS Lambda loads model from S3
-4. Transformer model performs inference
+1. User sends HTTP request to API Gateway
+2. API Gateway proxies request to Lambda
+3. Lambda (running Docker container) processes request
+4. Model loaded from S3 (cached in /tmp)
 5. Prediction logged to DynamoDB
 6. Result returned to user (toxic/clean + confidence scores)
 
@@ -90,7 +82,9 @@ Online platforms face a critical challenge: **millions of user-generated comment
 | **Python 3.8+** | Core programming language for ML and API development |
 | **Transformers (Hugging Face)** | Access to pre-trained NLP models (DistilBERT) for transfer learning |
 | **FastAPI** | High-performance API framework with automatic documentation |
-| **AWS Lambda** | Serverless compute for cost-efficient, auto-scaling inference |
+| **AWS Lambda** | Serverless compute running Docker containers for inference |
+| **Amazon ECR** | Container registry for storing Docker images |
+| **Amazon API Gateway** | HTTP API endpoint for public access |
 | **Amazon S3** | Cloud storage for datasets, trained models, and artifacts |
 | **Amazon DynamoDB** | NoSQL database for logging predictions and monitoring |
 | **PyTorch** | Deep learning framework for model training and inference |
@@ -151,8 +145,9 @@ pip install -r requirements.txt
 jupyter notebook notebooks/01_eda_toxic_comments.ipynb
 ```
 
-### AWS Setup (Coming Soon)
-Instructions for deploying to AWS Lambda will be added after local development is complete.
+
+### AWS Deployment
+Detailed instructions for deploying the infrastructure to AWS using Docker and Terraform can be found in the [Deployment Guide](DEPLOYMENT.md).
 
 ---
 
@@ -200,8 +195,8 @@ Instructions for deploying to AWS Lambda will be added after local development i
 - [x] FastAPI development 
 
 ### 🚧 In Progress
-- [ ] AWS Lambda deployment
-- [ ] DynamoDB integration
+- [x] AWS Lambda deployment (Docker-based)
+- [x] DynamoDB integration
 - [ ] Testing and evaluation
 
 ### 🔮 Future Enhancements
@@ -225,7 +220,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 **Aravind S**
 - GitHub: (https://github.com/Arv-ind-s)
-- LinkedIn: [(https://www.linkedin.com/in/97aravind-s/)
+- LinkedIn: [https://www.linkedin.com/in/97aravind-s/](https://www.linkedin.com/in/97aravind-s/)
 - Email: arvindsathyan@gmail.com
 
 ---

@@ -1,85 +1,79 @@
 # Infrastructure as Code - Terraform
 
 ## Overview
-Terraform configuration for deploying the Content Moderation System to AWS.
+Terraform configuration for deploying the Content Moderation System to AWS using a **serverless Docker container** architecture.
 
 ## Architecture
 ```
 ┌─────────────┐
 │   Client    │
+│  (HTTP/1.1) │
 └──────┬──────┘
        │
        ▼
 ┌─────────────────┐
 │  API Gateway    │
+│   (HTTP API)    │
 └──────┬──────────┘
        │
        ▼
 ┌─────────────────┐      ┌──────────────┐
-│  AWS Lambda     │─────▶│  Amazon S3   │
-│  (Inference)    │      │ (Model Store)│
+│  AWS Lambda     │◀─────│     ECR      │
+│ (Docker Image)  │      │(Image Repo)  │
 └──────┬──────────┘      └──────────────┘
        │
+       │ Load Model
        ▼
-┌─────────────────┐
-│   DynamoDB      │
-│ (Predictions)   │
-└─────────────────┘
+┌─────────────────┐      ┌──────────────┐
+│   Amazon S3     │      │   DynamoDB   │
+│ (Model Storage) │      │ (Predictions)│
+└─────────────────┘      └──────────────┘
 ```
 
 ## Resources Provisioned
 
-1. **S3 Bucket** - Stores trained model artifacts
-2. **Lambda Function** - Runs model inference
-3. **DynamoDB Table** - Logs predictions and metrics
-4. **IAM Roles** - Permissions for Lambda
-5. **CloudWatch Logs** - Monitoring and debugging
+1.  **ECR Repository** - Stores the Docker image for the Lambda function.
+2.  **Lambda Function** - Runs the FastAPI application (packaged as a Docker container).
+3.  **API Gateway (HTTP API)** - Provides a public HTTP endpoint for the Lambda.
+4.  **S3 Bucket** - Stores the trained model artifacts (downloaded by Lambda on startup).
+5.  **DynamoDB Table** - Logs predictions and metrics (On-Demand capacity).
+6.  **IAM Roles** - Permissions for Lambda to access S3, DynamoDB, and CloudWatch.
+7.  **CloudWatch Logs** - Monitoring and debugging.
 
-## Prerequisites
+## 🚀 Deployment
 
-- AWS Account
-- AWS CLI configured (`aws configure`)
-- Terraform >= 1.0 installed
+> [!IMPORTANT]
+> **Deployment is a multi-step process** because the Lambda function requires the Docker image to exist before it can be created.
 
-## Quick Start
-```bash
-# Initialize Terraform
-terraform init
+Please refer to the main **[Deployment Guide](../DEPLOYMENT.md)** for detailed instructions.
 
-# Preview infrastructure changes
-terraform plan
-
-# Deploy
-terraform apply
-
-# Destroy (cleanup)
-terraform destroy
-```
+### Quick Summary
+1.  **Create Repo**: `terraform apply -target=aws_ecr_repository.moderation_repo`
+2.  **Push Image**: `../scripts/deploy.sh`
+3.  **Deploy All**: `terraform apply`
 
 ## Configuration
 
 Edit `variables.tf` to customize:
-- AWS region
-- Lambda memory/timeout
-- Resource names
+-   `aws_region`: Deployment region (default: `us-east-1`)
+-   `lambda_memory_size`: RAM for Lambda (default: `512`)
+-   `lambda_timeout`: Timeout in seconds (default: `30`)
 
 ## Outputs
 
-After `terraform apply`, you'll get:
-- S3 bucket name
-- Lambda function ARN
-- DynamoDB table name
-- API endpoint (if enabled)
+After `terraform apply`, you will receive:
+-   `api_endpoint`: The public URL to access your API.
+-   `ecr_repository_url`: The URL of your private Docker registry.
+-   `s3_bucket_name`: Bucket for model storage.
 
-## Cost Estimate
+## Cost Estimate (Optimized)
 
-With AWS Free Tier:
-- S3: ~$1/month
-- Lambda: ~$2/month  
-- DynamoDB: ~$1/month
-- **Total**: ~$4-5/month
+This infrastructure is optimized for the **AWS Free Tier** and low-cost operation:
 
-## Status
+*   **API Gateway (HTTP API)**: ~$1.00 per million requests (Free Tier: 1M/month for 12 months).
+*   **Lambda (ARM64)**: Pay per millisecond of execution.
+*   **DynamoDB**: Pay-per-request (On-Demand). $0 idle cost.
+*   **ECR**: Storage costs for the Docker image (~$0.10/GB/month).
+*   **S3**: Storage costs for the model file (~$0.023/GB/month).
 
-✅ Terraform directory and structure created
-
+**Total Idle Cost**: < $0.50 / month (mostly storage).

@@ -8,6 +8,8 @@ from transformers import DistilBertTokenizer, DistilBertForSequenceClassificatio
 from pathlib import Path
 import logging
 import os
+import boto3
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +53,10 @@ class ModelLoader:
             
             # Load fine-tuned weights if available
             if self.model_path:
+                # Check if we need to download from S3 (if not local and bucket is set)
+                if not os.path.exists(self.model_path) and os.getenv('MODEL_BUCKET'):
+                    self._download_from_s3()
+
                 model_path_obj = Path(self.model_path)
                 
                 if model_path_obj.exists():
@@ -111,3 +117,26 @@ class ModelLoader:
         if not self.is_loaded():
             raise RuntimeError("Tokenizer not loaded. Call load_model() first.")
         return self.tokenizer
+
+    def _download_from_s3(self):
+        """Download model from S3 to local path."""
+        bucket = os.getenv('MODEL_BUCKET')
+        key = os.getenv('MODEL_KEY', 'models/best_model.pt')
+        
+        logger.info(f"⬇️ Downloading model from S3: s3://{bucket}/{key}")
+        logger.info(f"⬇️ Destination: {self.model_path}")
+        
+        try:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+            
+            s3_client = boto3.client('s3')
+            s3_client.download_file(bucket, key, self.model_path)
+            
+            logger.info("✅ Model downloaded successfully!")
+            
+        except ClientError as e:
+            logger.error(f"❌ Failed to download model from S3: {e}")
+            # Don't raise here, let the main loader handle the missing file
+        except Exception as e:
+            logger.error(f"❌ Unexpected error downloading from S3: {e}")
