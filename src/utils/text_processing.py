@@ -23,7 +23,7 @@ def clean_text(text: str) -> str:
     text = text.replace('\n', ' ').replace('\t', ' ').replace('\r', ' ')
     
     # Remove URLs
-    url_pattern = r'(https?://\S+|www\.\S+|\S+\.(com|org|net|in|info|io)\S*)'
+    url_pattern = r'https?://\S+|www\.\S+'
     text = re.sub(url_pattern, '', text)
     
     # Remove IP addresses

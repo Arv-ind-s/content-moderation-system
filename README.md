@@ -149,6 +149,24 @@ jupyter notebook notebooks/01_eda_toxic_comments.ipynb
 ### AWS Deployment
 Detailed instructions for deploying the infrastructure to AWS using Docker and Terraform can be found in the [Deployment Guide](DEPLOYMENT.md).
 
+**Quick Start**:
+1. Provision Infrastructure:
+   ```bash
+   cd terraform
+   terraform init
+   terraform apply
+   ```
+
+2. Upload Model to S3:
+   ```bash
+   python scripts/upload_model.py
+   ```
+
+3. Deploy Application:
+   ```bash
+   ./scripts/deploy.sh
+   ```
+
 ---
 
 ## 💻 Usage

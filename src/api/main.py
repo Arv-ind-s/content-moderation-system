@@ -1,4 +1,4 @@
-```python
+
 """
 FastAPI application for content moderation.
 """
@@ -11,6 +11,9 @@ import json
 import time
 import uuid
 import os
+import boto3
+from decimal import Decimal
+from datetime import datetime
 from pythonjsonlogger import jsonlogger
 from pathlib import Path
 from dotenv import load_dotenv
@@ -60,9 +63,24 @@ logger.info(f"Loading .env from: {env_path}")
 logger.info(f"MODEL_NAME from env: {os.getenv('MODEL_NAME')}")
 logger.info(f"MODEL_PATH from env: {os.getenv('MODEL_PATH')}")
 
-# Global variables for model
+# Global variables
 model_loader = None
 predictor = None
+dynamodb_table = None
+
+def get_dynamodb_table():
+    """Lazy load DynamoDB table resource."""
+    global dynamodb_table
+    if dynamodb_table is None:
+        table_name = os.getenv("DYNAMODB_TABLE")
+        if table_name:
+            try:
+                dynamodb = boto3.resource('dynamodb')
+                dynamodb_table = dynamodb.Table(table_name)
+                logger.info(f"✅ DynamoDB logging enabled: {table_name}")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize DynamoDB: {e}")
+    return dynamodb_table
 
 
 @asynccontextmanager
@@ -258,6 +276,28 @@ async def moderate_content(request: ModerationRequest):
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Log to DynamoDB
+        try:
+            table = get_dynamodb_table()
+            if table and 'prediction' in locals():
+                item = {
+                    'prediction_id': str(uuid.uuid4()),
+                    'timestamp': Decimal(str(time.time())),
+                    'text_snippet': request.text[:200],
+                    'is_toxic': prediction['is_toxic'],
+                    'confidence': Decimal(str(prediction['confidence'])),
+                    'flagged_categories': prediction['flagged_categories'],
+                    'ip_address': request.client.host if request.client else "unknown"
+                }
+                # Add individual scores
+                for cat, score in prediction['toxicity_scores'].items():
+                    item[f"score_{cat}"] = Decimal(str(score))
+                
+                table.put_item(Item=item)
+                logger.info("✅ Prediction logged to DynamoDB")
+        except Exception as e:
+            logger.error(f"❌ Error logging to DynamoDB: {e}")
 
 
 if __name__ == "__main__":

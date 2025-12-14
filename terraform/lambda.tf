@@ -4,14 +4,15 @@ resource "aws_lambda_function" "moderation_api" {
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.moderation_repo.repository_url}:latest"
   
-  memory_size   = var.lambda_memory_size
-  timeout       = var.lambda_timeout
-  architectures = ["arm64"]
+  memory_size   = 3008
+  timeout       = 300
+  architectures = ["x86_64"]
   
   environment {
     variables = {
       MODEL_BUCKET    = aws_s3_bucket.model_storage.id
       MODEL_KEY       = "models/best_model.pt"
+      MODEL_PATH      = "/tmp/best_model.pt"
       DYNAMODB_TABLE  = aws_dynamodb_table.predictions.name
       TRANSFORMERS_CACHE = "/tmp/transformers_cache"
       HF_HOME            = "/tmp/hf_home"
