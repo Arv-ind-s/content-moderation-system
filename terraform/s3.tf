@@ -1,6 +1,8 @@
 resource "aws_s3_bucket" "model_storage" {
   bucket = "${var.s3_bucket_name}-${var.environment}-${data.aws_caller_identity.current.account_id}"
   
+  force_destroy = true
+  
   tags = {
     Name        = "Model Storage"
     CostCenter  = "Free Tier"

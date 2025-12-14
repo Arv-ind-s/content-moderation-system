@@ -221,17 +221,7 @@ Detailed instructions for deploying the infrastructure to AWS using Docker and T
 - [x] AWS Lambda deployment (Docker-based)
 - [x] Testing and evaluation
 
-### 🚧 In Progress
-- [ ] Multi-language support (Future)
 
-### 🔮 Future Enhancements
-- [ ] Multi-language support
-- [ ] Real-time dashboard for monitoring
-- [ ] A/B testing framework for model versions
-- [ ] User feedback loop for model improvement
-- [ ] Explainability features (highlight toxic phrases)
-- [ ] Rate limiting and authentication
-- [ ] Model versioning and rollback capability
 
 ---
 
