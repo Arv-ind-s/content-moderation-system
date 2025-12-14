@@ -218,10 +218,11 @@ Detailed instructions for deploying the infrastructure to AWS using Docker and T
 - [x] Terraform template creation
 - [x] FastAPI development 
 - [x] DynamoDB integration (Audit Logging)
+- [x] AWS Lambda deployment (Docker-based)
+- [x] Testing and evaluation
 
 ### 🚧 In Progress
-- [ ] AWS Lambda deployment (Docker-based)
-- [ ] Testing and evaluation
+- [ ] Multi-language support (Future)
 
 ### 🔮 Future Enhancements
 - [ ] Multi-language support
