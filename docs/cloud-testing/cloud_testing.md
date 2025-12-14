@@ -56,3 +56,7 @@
 ✅ S3 Integration works correctly (Model download validated).
 ✅ Inference matches local model performance.
 ✅ Deployment successful using Docker + Terraform.
+
+## Screenshots
+*(Add screenshots of AWS Console, CloudWatch Logs, and Postman tests here)*
+- [Screenshots Directory](screenshots/)
