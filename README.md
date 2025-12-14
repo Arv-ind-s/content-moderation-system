@@ -31,7 +31,7 @@ Online platforms face a critical challenge: **millions of user-generated comment
 - **Real-Time Processing**: Sub-second inference time using serverless architecture
 - **Transformer-Based NLP**: Leverages pre-trained BERT models fine-tuned on toxicity datasets
 - **RESTful API**: Easy integration with existing platforms via FastAPI
-- **Automated Logging**: Tracks all predictions in DynamoDB for monitoring and improvement
+- **Automated Audit Logging**: Asynchronously logs all predictions to DynamoDB for compliance and monitoring
 - **Cloud-Native**: Built on AWS serverless infrastructure (Lambda, S3, DynamoDB)
 - **Scalable**: Auto-scales to handle thousands of concurrent requests
 
@@ -40,29 +40,29 @@ Online platforms face a critical challenge: **millions of user-generated comment
 ## 🏗️ Architecture
 
 ```
-┌─────────────┐
-│   Client    │
-│  (HTTP/1.1) │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────┐
-│  API Gateway    │
-│   (HTTP API)    │
-└──────┬──────────┘
-       │
-       ▼
-┌─────────────────┐      ┌──────────────┐
-│  AWS Lambda     │◀─────│     ECR      │
-│ (Docker Image)  │      │(Image Repo)  │
-└──────┬──────────┘      └──────────────┘
-       │
-       │ Load Model
-       ▼
-┌─────────────────┐      ┌──────────────┐
-│   Amazon S3     │      │   DynamoDB   │
-│ (Model Storage) │      │ (Predictions)│
-└─────────────────┘      └──────────────┘
+              ┌─────────────┐
+              │   Client    │
+              └──────┬──────┘
+                     ▲
+                     │ Request/Response
+                     ▼
+              ┌──────┴──────┐
+              │ API Gateway │
+              └──────┬──────┘
+                     ▲
+                     │
+                     ▼
+┌────────┐    ┌──────┴───────┐    ┌──────────┐
+│  ECR   │───▶│  AWS Lambda  │◀───│ Amazon S3│
+│(Image) │    │  (Inference) │    │ (Model)  │
+└────────┘    └──────┬───────┘    └──────────┘
+                     │
+                     │ Log Prediction
+                     ▼
+              ┌──────────────┐
+              │   DynamoDB   │
+              │(Audit Logs)  │
+              └──────────────┘
 ```
 
 **Flow:**
@@ -199,10 +199,10 @@ Detailed instructions for deploying the infrastructure to AWS using Docker and T
 - [x] Model selection and fine-tuning
 - [x] Terraform template creation
 - [x] FastAPI development 
+- [x] DynamoDB integration (Audit Logging)
 
 ### 🚧 In Progress
-- [x] AWS Lambda deployment (Docker-based)
-- [x] DynamoDB integration
+- [ ] AWS Lambda deployment (Docker-based)
 - [ ] Testing and evaluation
 
 ### 🔮 Future Enhancements
